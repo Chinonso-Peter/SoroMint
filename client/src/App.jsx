@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
 import { Wallet, Coins, Plus, List, ArrowRight, ShieldCheck } from 'lucide-react';
 import SEO from './components/SEO';
 import LanguageSelector from './components/LanguageSelector';
@@ -21,6 +22,7 @@ function App() {
   const connectWallet = async () => {
     const mockAddress = 'GB...' + Math.random().toString(36).substring(7).toUpperCase();
     setAddress(mockAddress);
+    toast.success(t('app.walletConnected') || 'Wallet connected');
     fetchTokens(mockAddress);
   };
 
@@ -35,7 +37,10 @@ function App() {
 
   const handleMint = async (e) => {
     e.preventDefault();
-    if (!address) return alert(t('mint.connectFirst'));
+    if (!address) {
+      toast.warn(t('mint.connectFirst'));
+      return;
+    }
     
     setIsMinting(true);
     try {
@@ -49,9 +54,9 @@ function App() {
 
       setTokens([...tokens, resp.data]);
       setFormData({ name: '', symbol: '', decimals: 7 });
-      alert(t('mint.success'));
+      toast.success(t('mint.success'));
     } catch (err) {
-      alert(t('mint.failed') + ': ' + err.message);
+      toast.error(t('mint.failed') + ': ' + err.message);
     } finally {
       setIsMinting(false);
     }
