@@ -10,6 +10,7 @@ const { initEnv, getEnv } = require("./config/env-config");
 initEnv();
 
 const { scheduleBackups } = require("./services/backup-service");
+const { getCacheService } = require("./services/cache-service");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -74,6 +75,18 @@ const connectDatabase = async () => {
 
 const startServer = async () => {
   const env = getEnv();
+
+  // Initialize cache service
+  const cacheService = getCacheService();
+  try {
+    await cacheService.initialize();
+    logger.info("Cache service initialized successfully");
+  } catch (error) {
+    logger.warn("Cache service initialization failed, continuing without cache", {
+      error: error.message,
+    });
+  }
+
   await connectDatabase();
   const app = createApp();
 

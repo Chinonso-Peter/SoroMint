@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Wallet, Coins, Plus, List, ArrowRight, ShieldCheck } from 'lucide-react';
+import { SkeletonList, SkeletonTokenForm } from './components/Skeleton';
+import { useWalletStore, useTokenStore } from './store';
 import React from "react"
 import { useForm } from "react-hook-form"
 import axios from "axios"
@@ -9,8 +11,10 @@ export default function App() {
   const { register, handleSubmit, formState: { errors } } = useForm()
 
 function App() {
-  const [address, setAddress] = useState('');
-  const [tokens, setTokens] = useState([]);
+  // Use Zustand stores for global state
+  const { address, setWallet, disconnectWallet } = useWalletStore();
+  const { tokens, addToken, isLoading, setLoading, fetchTokens } = useTokenStore();
+  
   const [formData, setFormData] = useState({
     name: '',
     symbol: '',
@@ -21,6 +25,10 @@ function App() {
 
   const connectWallet = async () => {
     const mockAddress = 'GB...' + Math.random().toString(36).substring(7).toUpperCase();
+    setWallet(mockAddress);
+    fetchTokens(mockAddress);
+  };
+
     setAddress(mockAddress);
     setStatusMessage('Wallet connected');
     fetchTokens(mockAddress);
@@ -56,7 +64,7 @@ function App() {
         ownerPublicKey: address
       });
 
-      setTokens([...tokens, resp.data]);
+      addToken(resp.data);
       setFormData({ name: '', symbol: '', decimals: 7 });
       setStatusMessage('Token minted successfully');
     } catch (err) {
@@ -83,6 +91,10 @@ function App() {
             Soro<span className="text-stellar-blue">Mint</span>
           </h1>
         </div>
+        
+        <button 
+          onClick={address ? disconnectWallet : connectWallet}
+          className="flex items-center gap-2 btn-primary"
 
         <button
           onClick={connectWallet}
@@ -110,6 +122,10 @@ function App() {
               <Plus size={20} className="text-stellar-blue" aria-hidden="true" />
               Mint New Token
             </h2>
+            {isLoading ? (
+              <SkeletonTokenForm />
+            ) : (
+              <form onSubmit={handleMint} className="space-y-4">
 
             <form
               onSubmit={handleMint}
@@ -181,6 +197,7 @@ function App() {
                 {!isMinting && <ArrowRight size={18} aria-hidden="true" />}
               </button>
             </form>
+            )}
           </div>
         </section>
 
@@ -202,6 +219,10 @@ function App() {
               >
                 <ShieldCheck size={48} className="mb-4 opacity-20" aria-hidden="true" />
                 <p>Connect your wallet to see your assets</p>
+              </div>
+            ) : isLoading ? (
+              <div className="py-8">
+                <SkeletonList count={5} />
               </div>
             ) : tokens.length === 0 ? (
               <div
