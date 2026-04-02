@@ -16,97 +16,65 @@
 /// Each function accepts the environment and the relevant parameters,
 /// then publishes the event with the appropriate topic tuple and data payload.
 use soroban_sdk::{symbol_short, Address, Env, String};
+use soroban_sdk::{Env, Address, Symbol};
 
-/// Emits an `initialized` event when the token contract is first set up.
-///
-/// # Arguments
-/// * `env`     - The Soroban environment.
-/// * `admin`   - The address designated as the contract administrator.
-/// * `decimal` - The number of decimal places for the token.
-/// * `name`    - The human-readable name of the token.
-/// * `symbol`  - The ticker symbol for the token.
-///
-/// # Event Structure
-/// - **Topics**: `("SoroMint", "init")`
-/// - **Data**:   `(admin, decimal, name, symbol)`
-pub fn emit_initialized(env: &Env, admin: &Address, decimal: u32, name: &String, symbol: &String) {
-    let topics = (symbol_short!("SoroMint"), symbol_short!("init"));
-    env.events().publish(
-        topics,
-        (admin.clone(), decimal, name.clone(), symbol.clone()),
-    );
+pub fn emit_transfer(e: &Env, from: &Address, to: &Address, amount: i128, new_from_balance: i128, new_to_balance: i128) {
+    let topics = (Symbol::new(e, "transfer"), from.clone(), to.clone());
+    e.events().publish(topics, (amount, new_from_balance, new_to_balance));
 }
 
-/// Emits a `mint` event when new tokens are minted to a recipient.
-///
-/// # Arguments
-/// * `env`         - The Soroban environment.
-/// * `admin`       - The admin address authorizing the mint.
-/// * `to`          - The recipient address.
-/// * `amount`      - The number of tokens minted.
-/// * `new_balance` - The recipient's balance after the mint.
-/// * `new_supply`  - The total token supply after the mint.
-///
-/// # Event Structure
-/// - **Topics**: `("SoroMint", "mint")`
-/// - **Data**:   `(admin, to, amount, new_balance, new_supply)`
-pub fn emit_mint(
-    env: &Env,
-    admin: &Address,
+pub fn emit_approve(e: &Env, from: &Address, spender: &Address, amount: i128) {
+    let topics = (Symbol::new(e, "approve"), from.clone(), spender.clone());
+    e.events().publish(topics, amount);
+}
+
+pub fn emit_mint(e: &Env, admin: &Address, to: &Address, amount: i128, new_balance: i128, new_supply: i128) {
+    let topics = (Symbol::new(e, "mint"), admin.clone(), to.clone());
+    e.events().publish(topics, (amount, new_balance, new_supply));
+}
+
+pub fn emit_burn(e: &Env, admin: &Address, from: &Address, amount: i128, new_balance: i128, new_supply: i128) {
+    let topics = (Symbol::new(e, "burn"), admin.clone(), from.clone());
+    e.events().publish(topics, (amount, new_balance, new_supply));
+}
+
+pub fn emit_initialized(e: &Env, admin: &Address, decimal: u32, name: &soroban_sdk::String, symbol: &soroban_sdk::String) {
+    let topics = (Symbol::new(e, "init"), admin.clone());
+    e.events().publish(topics, (admin.clone(), decimal, name.clone(), symbol.clone()));
+}
+
+pub fn emit_ownership_transfer(e: &Env, prev_admin: &Address, new_admin: &Address) {
+    let topics = (Symbol::new(e, "owner_tx"), prev_admin.clone(), new_admin.clone());
+    e.events().publish(topics, new_admin.clone());
+}
+
+pub fn emit_metadata_updated(e: &Env, admin: &Address, hash: &soroban_sdk::String) {
+    let topics = (Symbol::new(e, "meta_upd"), admin.clone());
+    e.events().publish(topics, hash.clone());
+}
+
+pub fn emit_fee_config_updated(e: &Env, admin: &Address, enabled: bool, fee_bps: u32, treasury: &Address) {
+    let topics = (Symbol::new(e, "fee_cfg"), admin.clone());
+    e.events().publish(topics, (admin.clone(), enabled, fee_bps, treasury.clone()));
+}
+
+pub fn emit_fee_collected(e: &Env, from: &Address, treasury: &Address, amount: i128) {
+    let topics = (Symbol::new(e, "fee_coll"), from.clone(), treasury.clone());
+    e.events().publish(topics, amount);
+}
+
+pub fn emit_transfer_from(
+    e: &Env,
+    spender: &Address,
+    from: &Address,
     to: &Address,
     amount: i128,
-    new_balance: i128,
-    new_supply: i128,
+    remaining_allowance: i128,
+    new_from_balance: i128,
+    new_to_balance: i128,
 ) {
-    let topics = (symbol_short!("SoroMint"), symbol_short!("mint"));
-    env.events().publish(
-        topics,
-        (admin.clone(), to.clone(), amount, new_balance, new_supply),
-    );
-}
-
-/// Emits a `burn` event when tokens are burned from a holder.
-///
-/// # Arguments
-/// * `env`         - The Soroban environment.
-/// * `admin`       - The admin address authorizing the burn.
-/// * `from`        - The address whose tokens are burned.
-/// * `amount`      - The number of tokens burned.
-/// * `new_balance` - The holder's balance after the burn.
-/// * `new_supply`  - The total token supply after the burn.
-///
-/// # Event Structure
-/// - **Topics**: `("SoroMint", "burn")`
-/// - **Data**:   `(admin, to, amount, new_balance, new_supply)`
-pub fn emit_burn(
-    env: &Env,
-    admin: &Address,
-    from: &Address,
-    amount: i128,
-    new_balance: i128,
-    new_supply: i128,
-) {
-    let topics = (symbol_short!("SoroMint"), symbol_short!("burn"));
-    env.events().publish(
-        topics,
-        (admin.clone(), from.clone(), amount, new_balance, new_supply),
-    );
-}
-
-/// Emits an `ownership_transfer` event when the admin role is transferred.
-///
-/// # Arguments
-/// * `env`        - The Soroban environment.
-/// * `prev_admin` - The outgoing administrator address.
-/// * `new_admin`  - The incoming administrator address.
-///
-/// # Event Structure
-/// - **Topics**: `("SoroMint", "xfer_own")`
-/// - **Data**:   `(prev_admin, new_admin)`
-pub fn emit_ownership_transfer(env: &Env, prev_admin: &Address, new_admin: &Address) {
-    let topics = (symbol_short!("SoroMint"), symbol_short!("xfer_own"));
-    env.events()
-        .publish(topics, (prev_admin.clone(), new_admin.clone()));
+    let topics = (Symbol::new(e, "tx_from"), spender.clone(), from.clone(), to.clone());
+    e.events().publish(topics, (amount, remaining_allowance, new_from_balance, new_to_balance));
 }
 
 /// Emits a `metadata_updated` event when the token metadata is updated.
