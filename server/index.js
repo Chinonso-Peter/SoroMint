@@ -39,6 +39,7 @@ const notificationRoutes = require("./routes/notification-routes");
 const multiSigRoutes = require("./routes/multisig-routes");
 const vaultRoutes = require("./routes/vault-routes");
 const daoRoutes = require("./routes/dao-routes");
+const sorobanEventRoutes = require("./routes/soroban-event-routes");
 
 const createApp = ({ authRouter = authRoutes, tokenRouter = tokenRoutes } = {}) => {
   const app = express();
@@ -64,6 +65,7 @@ const createApp = ({ authRouter = authRoutes, tokenRouter = tokenRoutes } = {}) 
   app.use("/api/multisig", multiSigRoutes);
   app.use("/api/vault", vaultRoutes);
   app.use("/api/dao", daoRoutes);
+  app.use("/api/soroban", sorobanEventRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
